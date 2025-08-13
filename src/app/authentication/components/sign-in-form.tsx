@@ -22,6 +22,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   email: z.email("E-mail inválido!"),
@@ -31,6 +34,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignInForm = () => {
+  const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,9 +43,31 @@ const SignInForm = () => {
     },
   });
 
-  function onSubmit(values: FormValues) {
-    console.log("FORMULARIO VALIDO E ENVIADO!");
-    console.log(values);
+  async function onSubmit(values: FormValues) {
+    await authClient.signIn.email({
+      email: values.email,
+      password: values.password,
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: (ctx) => {
+          if (ctx.error.code === "USER_NOT_FOUND") {
+            toast.error("E-mail ou senha não encontrados.");
+            return form.setError("email", {
+              message: "E-mail não cadastrado.",
+            });
+          }
+          if (ctx.error.code === "INVALID_EMAIL_OR_PASSWORD") {
+            toast.error("E-mail ou senha inválidos.");
+            return form.setError("email", {
+              message: "E-mail não cadastrado.",
+            });
+          }
+          toast.error(ctx.error.message);
+        },
+      },
+    });
   }
 
   return (
