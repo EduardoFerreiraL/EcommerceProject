@@ -1,7 +1,4 @@
-import { toNodeHandler } from "better-auth/node";
+import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/lib/auth";
 
-// Disallow body parsing, we will parse it manually
-export const config = { api: { bodyParser: false } };
-
-export default toNodeHandler(auth.handler);
+export const { GET, POST } = toNextJsHandler(auth.handler);
